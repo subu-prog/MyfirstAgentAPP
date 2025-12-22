@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Workflow Learning Lab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 20px;
+            min-height: calc(100vh - 200px);
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .panel h2 {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Workflow Patterns */
+        .pattern-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pattern-item {
+            background: rgba(0,0,0,0.2);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pattern-item:hover {
+            background: rgba(59,130,246,0.1);
+            border-color: rgba(59,130,246,0.3);
+        }
+
+        .pattern-item.active {
+            background: rgba(59,130,246,0.15);
+            border-color: #3b82f6;
+        }
+
+        .pattern-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .pattern-name {
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 4px;
+        }
+
+        .pattern-desc {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* Canvas Area */
+        .canvas-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .toolbar-btn.primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+        }
+
+        .toolbar-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(59,130,246,0.3);
+        }
+
+        .toolbar-btn.running {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .workflow-canvas {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            min-height: 500px;
+            position: relative;
+            overflow: auto;
+            padding: 30px;
+        }
+
+        /* Workflow Nodes */
+        .workflow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            min-width: max-content;
+        }
+
+        .workflow-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .node {
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 15px 20px;
+            min-width: 160px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .node.start {
+            background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.2));
+            border-color: #10b981;
+        }
+
+        .node.end {
+            background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.2));
+            border-color: #ef4444;
+        }
+
+        .node.process {
+            background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.2));
+            border-color: #3b82f6;
+        }
+
+        .node.decision {
+            background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.2));
+            border-color: #fbbf24;
+            transform: rotate(0deg);
+            border-radius: 8px;
+        }
+
+        .node.agent {
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(124,58,237,0.2));
+            border-color: #8b5cf6;
+        }
+
+        .node.human {
+            background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(219,39,119,0.2));
+            border-color: #ec4899;
+        }
+
+        .node.parallel-container {
+            background: rgba(255,255,255,0.03);
+            border: 2px dashed rgba(255,255,255,0.2);
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .node.active {
+            box-shadow: 0 0 30px rgba(59,130,246,0.5);
+            transform: scale(1.05);
+        }
+
+        .node.completed {
+            opacity: 0.6;
+        }
+
+        .node.completed::after {
+            content: '✓';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #10b981;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .node-icon {
+            font-size: 1.3rem;
+            margin-bottom: 6px;
+        }
+
+        .node-label {
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .node-sublabel {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Connectors */
+        .connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+        }
+
+        .connector-line {
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+            position: relative;
+        }
+
+        .connector-line::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #8b5cf6;
+        }
+
+        .connector-label {
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .connector-horizontal {
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+        }
+
+        /* Branch connectors */
+        .branch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .branch-split {
+            display: flex;
+            gap: 60px;
+            position: relative;
+        }
+
+        .branch-split::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 2px;
+            background: #8b5cf6;
+        }
+
+        .branch-path {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .branch-label {
+            font-size: 0.7rem;
+            color: #fbbf24;
+            margin-bottom: 10px;
+            background: rgba(251,191,36,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-card {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .info-card h3 {
+            font-size: 0.9rem;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .state-display {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: #10b981;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        .log-display {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 10px;
+        }
+
+        .log-time {
+            color: #64748b;
+            font-family: monospace;
+        }
+
+        .log-message {
+            color: #e2e8f0;
+        }
+
+        .log-entry.success .log-message { color: #10b981; }
+        .log-entry.info .log-message { color: #3b82f6; }
+        .log-entry.warning .log-message { color: #fbbf24; }
+
+        /* Concept Cards */
+        .concept-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .concept-item {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .concept-item h4 {
+            font-size: 0.85rem;
+            color: #3b82f6;
+            margin-bottom: 5px;
+        }
+
+        .concept-item p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+
+        /* Speed Control */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .speed-control label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .speed-control input[type="range"] {
+            flex: 1;
+            accent-color: #3b82f6;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.2);
+            border: none;
+            border-radius: 8px;
+            color: #64748b;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #e2e8f0;
+        }
+
+        .tab.active {
+            background: rgba(59,130,246,0.2);
+            color: #3b82f6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* API Key Input */
+        .api-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .api-input input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85rem;
+        }
+
+        .api-input input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        /* Animation for flow */
+        @keyframes flowPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .flowing .connector-line {
+            animation: flowPulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 AI Workflow Learning Lab</h1>
+            <p>Understand agent workflows through interactive examples</p>
+        </header>
+
+        <div class="main-layout">
+            <!-- Patterns Panel -->
+            <div class="panel">
+                <h2>📋 Workflow Patterns</h2>
+                <div class="pattern-list">
+                    <div class="pattern-item active" onclick="selectPattern('sequential')">
+                        <div class="pattern-icon">➡️</div>
+                        <div class="pattern-name">Sequential</div>
+                        <div class="pattern-desc">Steps execute one after another in order</div>
+                    </div>
+                    <div class="pattern-item" onclick="selectPattern('branching')">
+                        <div class="pattern-icon">🔀</div>
+                        <div class="pattern-name">Branching</div>
+                        <div class="pattern-desc">Different paths based on conditions</div>
+                    </div>
+                    <div class="pattern-item" onclick="selectPattern('parallel')">
+                        <div class="pattern-icon">⚡</div>
+                        <div class="pattern-name">Parallel</div>
+                        <div class="pattern-desc">Multiple steps run simultaneously</div>
+                    </div>
+                    <div class="pattern-item" onclick="selectPattern('loop')">
+                        <div class="pattern-icon">🔁</div>
+                        <div class="pattern-name">Loop / Iterative</div>
+                        <div class="pattern-desc">Repeat until condition is met</div>
+                    </div>
+                    <div class="pattern-item" onclick="selectPattern('human')">
+                        <div class="pattern-icon">🙋</div>
+                        <div class="pattern-name">Human-in-the-Loop</div>
+                        <div class="pattern-desc">Pause for human approval/input</div>
+                    </div>
+                    <div class="pattern-item" onclick="selectPattern('multiagent')">
+                        <div class="pattern-icon">🤝</div>
+                        <div class="pattern-name">Multi-Agent</div>
+                        <div class="pattern-desc">Multiple agents collaborate or handoff</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Panel -->
+            <div class="panel canvas-panel">
+                <div class="canvas-toolbar">
+                    <button class="toolbar-btn primary" id="run-btn" onclick="runWorkflow()">
+                        <span>▶️</span> Run Workflow
+                    </button>
+                    <button class="toolbar-btn" onclick="resetWorkflow()">
+                        <span>🔄</span> Reset
+                    </button>
+                    <button class="toolbar-btn" onclick="stepWorkflow()">
+                        <span>⏭️</span> Step
+                    </button>
+                    <div class="speed-control">
+                        <label>Speed:</label>
+                        <input type="range" id="speed" min="200" max="2000" value="1000">
+                    </div>
+                </div>
+
+                <div class="workflow-canvas" id="workflow-canvas">
+                    <!-- Workflow will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="panel info-panel">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('learn')">Learn</button>
+                    <button class="tab" onclick="switchTab('state')">State</button>
+                    <button class="tab" onclick="switchTab('log')">Log</button>
+                </div>
+
+                <div class="tab-content active" id="tab-learn">
+                    <div class="info-card">
+                        <h3>📖 <span id="pattern-title">Sequential Workflow</span></h3>
+                        <p id="pattern-explanation">
+                            The simplest workflow pattern. Each step completes before the next one starts. 
+                            Data flows from one node to the next in a predictable order.
+                        </p>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>💡 Key Concepts</h3>
+                        <div class="concept-grid" id="concepts-grid">
+                            <div class="concept-item">
+                                <h4>Node</h4>
+                                <p>A single step or action in the workflow</p>
+                            </div>
+                            <div class="concept-item">
+                                <h4>State</h4>
+                                <p>Data passed between nodes</p>
+                            </div>
+                            <div class="concept-item">
+                                <h4>Edge</h4>
+                                <p>Connection defining execution order</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>🎯 When to Use</h3>
+                        <p id="when-to-use">
+                            Use sequential workflows for straightforward tasks where each step depends on the previous one's output. 
+                            Examples: data processing pipelines, document generation, simple chatbots.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-state">
+                    <div class="info-card">
+                        <h3>📦 Current State</h3>
+                        <div class="state-display" id="state-display">
+{
+  "status": "idle",
+  "currentNode": null,
+  "data": {}
+}
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>🔑 State Explained</h3>
+                        <p>
+                            State is the data that flows through your workflow. Each node can read from and write to the state. 
+                            This is how information passes between steps.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-log">
+                    <div class="info-card">
+                        <h3>📜 Execution Log</h3>
+                        <div class="log-display" id="log-display">
+                            <div class="log-entry info">
+                                <span class="log-time">--:--:--</span>
+                                <span class="log-message">Ready to run workflow</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Workflow patterns configuration
+        const patterns = {
+            sequential: {
+                title: 'Sequential Workflow',
+                explanation: 'The simplest workflow pattern. Each step completes before the next one starts. Data flows from one node to the next in a predictable order.',
+                whenToUse: 'Use sequential workflows for straightforward tasks where each step depends on the previous one\'s output. Examples: data processing pipelines, document generation, simple chatbots.',
+                concepts: [
+                    { title: 'Node', desc: 'A single step or action in the workflow' },
+                    { title: 'State', desc: 'Data passed between nodes' },
+                    { title: 'Edge', desc: 'Connection defining execution order' }
+                ],
+                nodes: [
+                    { id: 'start', type: 'start', label: 'Start', icon: '🚀', sublabel: 'Trigger' },
+                    { id: 'process1', type: 'process', label: 'Fetch Data', icon: '📥', sublabel: 'API Call' },
+                    { id: 'agent1', type: 'agent', label: 'AI Analysis', icon: '🤖', sublabel: 'LLM Process' },
+                    { id: 'process2', type: 'process', label: 'Format Output', icon: '📝', sublabel: 'Transform' },
+                    { id: 'end', type: 'end', label: 'Complete', icon: '✅', sublabel: 'Return Result' }
+                ],
+                edges: [
+                    { from: 'start', to: 'process1' },
+                    { from: 'process1', to: 'agent1' },
+                    { from: 'agent1', to: 'process2' },
+                    { from: 'process2', to: 'end' }
+                ],
+                layout: 'vertical'
+            },
+            branching: {
+                title: 'Branching Workflow',
+                explanation: 'Conditional logic determines which path to take. Like an if/else statement, the workflow can go different directions based on data or decisions.',
+                whenToUse: 'Use when different inputs require different handling. Examples: customer support routing, approval workflows, A/B testing in pipelines.',
+                concepts: [
+                    { title: 'Decision Node', desc: 'Evaluates a condition' },
+                    { title: 'Branch', desc: 'Alternative execution path' },
+                    { title: 'Merge', desc: 'Paths converge back together' }
+                ],
+                nodes: [
+                    { id: 'start', type: 'start', label: 'Start', icon: '🚀', sublabel: 'User Query' },
+                    { id: 'agent1', type: 'agent', label: 'Classify Intent', icon: '🤖', sublabel: 'LLM' },
+                    { id: 'decision1', type: 'decision', label: 'Intent Type?', icon: '❓', sublabel: 'Condition' },
+                    { id: 'process1', type: 'process', label: 'Sales Flow', icon: '💰', sublabel: 'Path A' },
+                    { id: 'process2', type: 'process', label: 'Support Flow', icon: '🛠️', sublabel: 'Path B' },
+                    { id: 'process3', type: 'process', label: 'General Flow', icon: '💬', sublabel: 'Path C' },
+                    { id: 'end', type: 'end', label: 'Respond', icon: '✅', sublabel: 'Output' }
+                ],
+                edges: [
+                    { from: 'start', to: 'agent1' },
+                    { from: 'agent1', to: 'decision1' },
+                    { from: 'decision1', to: 'process1', label: 'Sales' },
+                    { from: 'decision1', to: 'process2', label: 'Support' },
+                    { from: 'decision1', to: 'process3', label: 'General' },
+                    { from: 'process1', to: 'end' },
+                    { from: 'process2', to: 'end' },
+                    { from: 'process3', to: 'end' }
+                ],
+                layout: 'branching'
+            },
+            parallel: {
+                title: 'Parallel Workflow',
+                explanation: 'Multiple steps execute simultaneously, then results are combined. This speeds up workflows where steps don\'t depend on each other.',
+                whenToUse: 'Use when you have independent tasks that can run at the same time. Examples: gathering data from multiple sources, running multiple analyses, batch processing.',
+                concepts: [
+                    { title: 'Fork', desc: 'Split into parallel branches' },
+                    { title: 'Join', desc: 'Wait for all branches to complete' },
+                    { title: 'Concurrency', desc: 'Simultaneous execution' }
+                ],
+                nodes: [
+                    { id: 'start', type: 'start', label: 'Start', icon: '🚀', sublabel: 'Input Data' },
+                    { id: 'fork', type: 'process', label: 'Fork', icon: '🔱', sublabel: 'Split Tasks' },
+                    { id: 'parallel1', type: 'agent', label: 'Web Search', icon: '🌐', sublabel: 'Agent 1' },
+                    { id: 'parallel2', type: 'agent', label: 'Database Query', icon: '🗄️', sublabel: 'Agent 2' },
+                    { id: 'parallel3', type: 'agent', label: 'API Call', icon: '🔌', sublabel: 'Agent 3' },
+                    { id: 'join', type: 'process', label: 'Join', icon: '🔗', sublabel: 'Merge Results' },
+                    { id: 'agent1', type: 'agent', label: 'Synthesize', icon: '🤖', sublabel: 'Combine' },
+                    { id: 'end', type: 'end', label: 'Complete', icon: '✅', sublabel: 'Output' }
+                ],
+                edges: [
+                    { from: 'start', to: 'fork' },
+                    { from: 'fork', to: 'parallel1' },
+                    { from: 'fork', to: 'parallel2' },
+                    { from: 'fork', to: 'parallel3' },
+                    { from: 'parallel1', to: 'join' },
+                    { from: 'parallel2', to: 'join' },
+                    { from: 'parallel3', to: 'join' },
+                    { from: 'join', to: 'agent1' },
+                    { from: 'agent1', to: 'end' }
+                ],
+                layout: 'parallel'
+            },
+            loop: {
+                title: 'Loop / Iterative Workflow',
+                explanation: 'The workflow repeats a section until a condition is met. Common in agentic AI where the agent keeps refining until the task is complete.',
+                whenToUse: 'Use when you need to iterate until quality threshold is met, or process items in a list. Examples: code generation with testing, document refinement, batch processing.',
+                concepts: [
+                    { title: 'Loop Condition', desc: 'Check if iteration should continue' },
+                    { title: 'Iteration', desc: 'One pass through the loop' },
+                    { title: 'Exit Condition', desc: 'When to stop looping' }
+                ],
+                nodes: [
+                    { id: 'start', type: 'start', label: 'Start', icon: '🚀', sublabel: 'Initial Input' },
+                    { id: 'agent1', type: 'agent', label: 'Generate', icon: '🤖', sublabel: 'Create Output' },
+                    { id: 'process1', type: 'process', label: 'Evaluate', icon: '🔍', sublabel: 'Check Quality' },
+                    { id: 'decision1', type: 'decision', label: 'Good Enough?', icon: '❓', sublabel: 'Condition' },
+                    { id: 'process2', type: 'process', label: 'Refine Input', icon: '🔄', sublabel: 'Improve' },
+                    { id: 'end', type: 'end', label: 'Complete', icon: '✅', sublabel: 'Final Output' }
+                ],
+                edges: [
+                    { from: 'start', to: 'agent1' },
+                    { from: 'agent1', to: 'process1' },
+                    { from: 'process1', to: 'decision1' },
+                    { from: 'decision1', to: 'end', label: 'Yes' },
+                    { from: 'decision1', to: 'process2', label: 'No' },
+                    { from: 'process2', to: 'agent1', label: 'Retry' }
+                ],
+                layout: 'loop'
+            },
+            human: {
+                title: 'Human-in-the-Loop Workflow',
+                explanation: 'The workflow pauses at certain points for human review, approval, or input. Critical for high-stakes decisions or quality control.',
+                whenToUse: 'Use when AI output needs human verification, for compliance requirements, or when decisions have significant consequences. Examples: content moderation, financial approvals, medical recommendations.',
+                concepts: [
+                    { title: 'Approval Gate', desc: 'Human must approve to continue' },
+                    { title: 'Review Queue', desc: 'Items waiting for human attention' },
+                    { title: 'Escalation', desc: 'Route complex cases to humans' }
+                ],
+                nodes: [
+                    { id: 'start', type: 'start', label: 'Start', icon: '🚀', sublabel: 'Request' },
+                    { id: 'agent1', type: 'agent', label: 'AI Analysis', icon: '🤖', sublabel: 'Process' },
+                    { id: 'agent2', type: 'agent', label: 'Generate Draft', icon: '📝', sublabel: 'Create' },
+                    { id: 'human1', type: 'human', label: 'Human Review', icon: '🙋', sublabel: 'Approval Gate' },
+                    { id: 'decision1', type: 'decision', label: 'Approved?', icon: '❓', sublabel: 'Decision' },
+                    { id: 'process1', type: 'process', label: 'Revise', icon: '✏️', sublabel: 'Update' },
+                    { id: 'end', type: 'end', label: 'Publish', icon: '✅', sublabel: 'Complete' }
+                ],
+                edges: [
+                    { from: 'start', to: 'agent1' },
+                    { from: 'agent1', to: 'agent2' },
+                    { from: 'agent2', to: 'human1' },
+                    { from: 'human1', to: 'decision1' },
+                    { from: 'decision1', to: 'end', label: 'Yes' },
+                    { from: 'decision1', to: 'process1', label: 'No' },
+                    { from: 'process1', to: 'agent2' }
+                ],
+                layout: 'loop'
+            },
+            multiagent: {
+                title: 'Multi-Agent Workflow',
+                explanation: 'Multiple specialized AI agents work together, each handling their area of expertise. Agents can collaborate, debate, or hand off tasks to each other.',
+                whenToUse: 'Use for complex tasks requiring different skills, when you want checks and balances between agents, or for simulating team collaboration. Examples: code review, research synthesis, complex analysis.',
+                concepts: [
+                    { title: 'Handoff', desc: 'Transfer control to another agent' },
+                    { title: 'Orchestrator', desc: 'Agent that coordinates others' },
+                    { title: 'Specialization', desc: 'Each agent has specific skills' }
+                ],
+                nodes: [
+                    { id: 'start', type: 'start', label: 'Start', icon: '🚀', sublabel: 'Task Input' },
+                    { id: 'orchestrator', type: 'agent', label: 'Orchestrator', icon: '🎯', sublabel: 'Coordinator' },
+                    { id: 'agent1', type: 'agent', label: 'Researcher', icon: '🔬', sublabel: 'Find Info' },
+                    { id: 'agent2', type: 'agent', label: 'Writer', icon: '✍️', sublabel: 'Create Content' },
+                    { id: 'agent3', type: 'agent', label: 'Critic', icon: '🧐', sublabel: 'Review' },
+                    { id: 'decision1', type: 'decision', label: 'Quality OK?', icon: '❓', sublabel: 'Check' },
+                    { id: 'end', type: 'end', label: 'Complete', icon: '✅', sublabel: 'Output' }
+                ],
+                edges: [
+                    { from: 'start', to: 'orchestrator' },
+                    { from: 'orchestrator', to: 'agent1' },
+                    { from: 'agent1', to: 'agent2', label: 'Handoff' },
+                    { from: 'agent2', to: 'agent3', label: 'Handoff' },
+                    { from: 'agent3', to: 'decision1' },
+                    { from: 'decision1', to: 'end', label: 'Pass' },
+                    { from: 'decision1', to: 'orchestrator', label: 'Retry' }
+                ],
+                layout: 'multiagent'
+            }
+        };
+
+        // State management
+        let currentPattern = 'sequential';
+        let workflowState = {
+            status: 'idle',
+            currentNode: null,
+            currentNodeIndex: -1,
+            data: {},
+            iteration: 0
+        };
+        let isRunning = false;
+        let executionOrder = [];
+
+        // Select pattern
+        function selectPattern(patternId) {
+            currentPattern = patternId;
+            
+            // Update UI
+            document.querySelectorAll('.pattern-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // Update info panel
+            const pattern = patterns[patternId];
+            document.getElementById('pattern-title').textContent = pattern.title;
+            document.getElementById('pattern-explanation').textContent = pattern.explanation;
+            document.getElementById('when-to-use').textContent = pattern.whenToUse;
+
+            // Update concepts
+            const conceptsGrid = document.getElementById('concepts-grid');
+            conceptsGrid.innerHTML = pattern.concepts.map(c => `
+                <div class="concept-item">
+                    <h4>${c.title}</h4>
+                    <p>${c.desc}</p>
+                </div>
+            `).join('');
+
+            // Reset and render
+            resetWorkflow();
+            renderWorkflow();
+        }
+
+        // Render workflow visualization
+        function renderWorkflow() {
+            const canvas = document.getElementById('workflow-canvas');
+            const pattern = patterns[currentPattern];
+
+            let html = '<div class="workflow-container">';
+
+            switch (pattern.layout) {
+                case 'vertical':
+                    html += renderVerticalLayout(pattern);
+                    break;
+                case 'branching':
+                    html += renderBranchingLayout(pattern);
+                    break;
+                case 'parallel':
+                    html += renderParallelLayout(pattern);
+                    break;
+                case 'loop':
+                case 'multiagent':
+                    html += renderLoopLayout(pattern);
+                    break;
+                default:
+                    html += renderVerticalLayout(pattern);
+            }
+
+            html += '</div>';
+            canvas.innerHTML = html;
+
+            // Calculate execution order
+            calculateExecutionOrder(pattern);
+        }
+
+        // Render vertical layout
+        function renderVerticalLayout(pattern) {
+            let html = '';
+            pattern.nodes.forEach((node, index) => {
+                html += renderNode(node);
+                if (index < pattern.nodes.length - 1) {
+                    html += renderConnector();
+                }
+            });
+            return html;
+        }
+
+        // Render branching layout
+        function renderBranchingLayout(pattern) {
+            const start = pattern.nodes.find(n => n.id === 'start');
+            const classifier = pattern.nodes.find(n => n.id === 'agent1');
+            const decision = pattern.nodes.find(n => n.id === 'decision1');
+            const branches = pattern.nodes.filter(n => n.id.startsWith('process'));
+            const end = pattern.nodes.find(n => n.id === 'end');
+
+            let html = '';
+            html += renderNode(start);
+            html += renderConnector();
+            html += renderNode(classifier);
+            html += renderConnector();
+            html += renderNode(decision);
+            html += renderConnector();
+
+            html += '<div class="branch-container">';
+            html += '<div class="branch-split">';
+            branches.forEach((branch, i) => {
+                const labels = ['Sales', 'Support', 'General'];
+                html += `
+                    <div class="branch-path">
+                        <div class="branch-label">${labels[i]}</div>
+                        ${renderNode(branch)}
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += '</div>';
+
+            html += renderConnector();
+            html += renderNode(end);
+
+            return html;
+        }
+
+        // Render parallel layout
+        function renderParallelLayout(pattern) {
+            const start = pattern.nodes.find(n => n.id === 'start');
+            const fork = pattern.nodes.find(n => n.id === 'fork');
+            const parallels = pattern.nodes.filter(n => n.id.startsWith('parallel'));
+            const join = pattern.nodes.find(n => n.id === 'join');
+            const synthesize = pattern.nodes.find(n => n.id === 'agent1');
+            const end = pattern.nodes.find(n => n.id === 'end');
+
+            let html = '';
+            html += renderNode(start);
+            html += renderConnector();
+            html += renderNode(fork);
+            html += renderConnector();
+
+            html += '<div class="node parallel-container">';
+            parallels.forEach((p, i) => {
+                html += renderNode(p);
+                if (i < parallels.length - 1) {
+                    html += '<div class="connector-horizontal"></div>';
+                }
+            });
+            html += '</div>';
+
+            html += renderConnector();
+            html += renderNode(join);
+            html += renderConnector();
+            html += renderNode(synthesize);
+            html += renderConnector();
+            html += renderNode(end);
+
+            return html;
+        }
+
+        // Render loop layout
+        function renderLoopLayout(pattern) {
+            let html = '';
+            const nodeOrder = pattern.nodes;
+            
+            nodeOrder.forEach((node, index) => {
+                html += renderNode(node);
+                
+                // Find edge from this node
+                const outEdges = pattern.edges.filter(e => e.from === node.id);
+                
+                if (outEdges.length === 1 && index < nodeOrder.length - 1) {
+                    html += renderConnector(outEdges[0].label);
+                } else if (outEdges.length > 1) {
+                    // Decision node
+                    html += '<div style="display: flex; gap: 40px; margin: 10px 0;">';
+                    outEdges.forEach(edge => {
+                        html += `<div class="connector-label" style="padding: 5px 10px;">${edge.label || ''}</div>`;
+                    });
+                    html += '</div>';
+                }
+            });
+            
+            return html;
+        }
+
+        // Render single node
+        function renderNode(node) {
+            return `
+                <div class="node ${node.type}" id="node-${node.id}">
+                    <div class="node-icon">${node.icon}</div>
+                    <div class="node-label">${node.label}</div>
+                    <div class="node-sublabel">${node.sublabel}</div>
+                </div>
+            `;
+        }
+
+        // Render connector
+        function renderConnector(label = '') {
+            return `
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    ${label ? `<div class="connector-label">${label}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Calculate execution order
+        function calculateExecutionOrder(pattern) {
+            executionOrder = pattern.nodes.map(n => n.id);
+        }
+
+        // Run workflow
+        async function runWorkflow() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('run-btn').classList.add('running');
+            document.getElementById('run-btn').innerHTML = '<span>⏸️</span> Running...';
+            
+            clearLog();
+            log('info', 'Starting workflow execution');
+            
+            workflowState = {
+                status: 'running',
+                currentNode: null,
+                currentNodeIndex: -1,
+                data: { input: 'Sample input data' },
+                iteration: 0
+            };
+            updateStateDisplay();
+
+            const pattern = patterns[currentPattern];
+            const speed = parseInt(document.getElementById('speed').value);
+
+            // Reset all nodes
+            document.querySelectorAll('.node').forEach(n => {
+                n.classList.remove('active', 'completed');
+            });
+
+            // Execute based on pattern type
+            await executePattern(pattern, speed);
+
+            isRunning = false;
+            document.getElementById('run-btn').classList.remove('running');
+            document.getElementById('run-btn').innerHTML = '<span>▶️</span> Run Workflow';
+            
+            workflowState.status = 'completed';
+            updateStateDisplay();
+            log('success', 'Workflow completed successfully!');
+        }
+
+        // Execute pattern
+        async function executePattern(pattern, speed) {
+            switch (pattern.layout) {
+                case 'vertical':
+                    for (const node of pattern.nodes) {
+                        await executeNode(node, speed);
+                    }
+                    break;
+                    
+                case 'branching':
+                    await executeNode(pattern.nodes.find(n => n.id === 'start'), speed);
+                    await executeNode(pattern.nodes.find(n => n.id === 'agent1'), speed);
+                    workflowState.data.intent = ['Sales', 'Support', 'General'][Math.floor(Math.random() * 3)];
+                    log('info', `Intent classified as: ${workflowState.data.intent}`);
+                    await executeNode(pattern.nodes.find(n => n.id === 'decision1'), speed);
+                    
+                    const branchMap = { 'Sales': 'process1', 'Support': 'process2', 'General': 'process3' };
+                    await executeNode(pattern.nodes.find(n => n.id === branchMap[workflowState.data.intent]), speed);
+                    await executeNode(pattern.nodes.find(n => n.id === 'end'), speed);
+                    break;
+                    
+                case 'parallel':
+                    await executeNode(pattern.nodes.find(n => n.id === 'start'), speed);
+                    await executeNode(pattern.nodes.find(n => n.id === 'fork'), speed);
+                    
+                    log('info', 'Executing parallel branches...');
+                    const parallels = pattern.nodes.filter(n => n.id.startsWith('parallel'));
+                    
+                    // Activate all parallel nodes
+                    parallels.forEach(p => {
+                        document.getElementById(`node-${p.id}`).classList.add('active');
+                    });
+                    
+                    await sleep(speed);
+                    
+                    // Complete all parallel nodes
+                    parallels.forEach(p => {
+                        const el = document.getElementById(`node-${p.id}`);
+                        el.classList.remove('active');
+                        el.classList.add('completed');
+                        log('success', `Completed: ${p.label}`);
+                    });
+                    
+                    await executeNode(pattern.nodes.find(n => n.id === 'join'), speed);
+                    await executeNode(pattern.nodes.find(n => n.id === 'agent1'), speed);
+                    await executeNode(pattern.nodes.find(n => n.id === 'end'), speed);
+                    break;
+                    
+                case 'loop':
+                case 'multiagent':
+                    let maxIterations = 3;
+                    let iteration = 0;
+                    let success = false;
+                    
+                    while (iteration < maxIterations && !success) {
+                        iteration++;
+                        workflowState.iteration = iteration;
+                        log('info', `--- Iteration ${iteration} ---`);
+                        
+                        // Reset nodes for new iteration
+                        document.querySelectorAll('.node').forEach(n => n.classList.remove('active', 'completed'));
+                        
+                        for (const node of pattern.nodes) {
+                            if (node.type === 'decision') {
+                                await executeNode(node, speed);
+                                // Random success chance increases with iterations
+                                success = Math.random() < (iteration * 0.4);
+                                log(success ? 'success' : 'warning', `Decision: ${success ? 'Passed!' : 'Needs improvement'}`);
+                                workflowState.data.decision = success;
+                                updateStateDisplay();
+                                
+                                if (success) {
+                                    await executeNode(pattern.nodes.find(n => n.id === 'end'), speed);
+                                    break;
+                                }
+                            } else if (node.id !== 'end') {
+                                await executeNode(node, speed);
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+
+        // Execute single node
+        async function executeNode(node, speed) {
+            if (!node) return;
+            
+            workflowState.currentNode = node.id;
+            updateStateDisplay();
+            
+            const el = document.getElementById(`node-${node.id}`);
+            if (el) {
+                el.classList.add('active');
+                log('info', `Executing: ${node.label}`);
+                
+                await sleep(speed);
+                
+                el.classList.remove('active');
+                el.classList.add('completed');
+                
+                // Update state based on node type
+                if (node.type === 'agent') {
+                    workflowState.data[node.id] = `Output from ${node.label}`;
+                }
+                updateStateDisplay();
+            }
+        }
+
+        // Step through workflow
+        async function stepWorkflow() {
+            if (workflowState.currentNodeIndex < 0) {
+                workflowState.currentNodeIndex = 0;
+            } else {
+                // Complete current node
+                const pattern = patterns[currentPattern];
+                const currentNode = pattern.nodes[workflowState.currentNodeIndex];
+                if (currentNode) {
+                    const el = document.getElementById(`node-${currentNode.id}`);
+                    if (el) {
+                        el.classList.remove('active');
+                        el.classList.add('completed');
+                    }
+                }
+                workflowState.currentNodeIndex++;
+            }
+
+            const pattern = patterns[currentPattern];
+            if (workflowState.currentNodeIndex < pattern.nodes.length) {
+                const node = pattern.nodes[workflowState.currentNodeIndex];
+                const el = document.getElementById(`node-${node.id}`);
+                if (el) {
+                    el.classList.add('active');
+                }
+                workflowState.currentNode = node.id;
+                log('info', `Step: ${node.label}`);
+            } else {
+                log('success', 'Workflow completed!');
+                workflowState.currentNodeIndex = -1;
+            }
+            
+            updateStateDisplay();
+        }
+
+        // Reset workflow
+        function resetWorkflow() {
+            isRunning = false;
+            workflowState = {
+                status: 'idle',
+                currentNode: null,
+                currentNodeIndex: -1,
+                data: {},
+                iteration: 0
+            };
+            
+            document.querySelectorAll('.node').forEach(n => {
+                n.classList.remove('active', 'completed');
+            });
+            
+            document.getElementById('run-btn').classList.remove('running');
+            document.getElementById('run-btn').innerHTML = '<span>▶️</span> Run Workflow';
+            
+            updateStateDisplay();
+            clearLog();
+            log('info', 'Workflow reset. Ready to run.');
+        }
+
+        // Update state display
+        function updateStateDisplay() {
+            document.getElementById('state-display').textContent = JSON.stringify(workflowState, null, 2);
+        }
+
+        // Logging
+        function log(type, message) {
+            const logDisplay = document.getElementById('log-display');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-message">${message}</span>
+            `;
+            logDisplay.appendChild(entry);
+            logDisplay.scrollTop = logDisplay.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log-display').innerHTML = '';
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // Utility
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        renderWorkflow();
+        updateStateDisplay();
+    </script>
+</body>
+</html>

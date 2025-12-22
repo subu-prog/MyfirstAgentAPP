@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Engine: The Content Factory</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --border: rgba(255,255,255,0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .config-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-group { flex: 1; }
+        .input-group label { display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px; }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover { filter: brightness(1.1); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Workflow Visuals */
+        .workflow-container {
+            position: relative;
+            padding-left: 30px; /* Space for the connecting line */
+        }
+
+        /* The vertical connecting line */
+        .workflow-line {
+            position: absolute;
+            left: 15px;
+            top: 20px;
+            bottom: 20px;
+            width: 2px;
+            background: var(--border);
+            z-index: 0;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            opacity: 0.5; /* Dimmed by default */
+            transform: translateX(0);
+        }
+
+        /* Status Indicators on the left */
+        .step-status {
+            position: absolute;
+            left: -46px;
+            top: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--text-muted);
+            z-index: 2;
+            transition: all 0.3s;
+        }
+
+        /* State: Active */
+        .step-card.active {
+            opacity: 1;
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+        .step-card.active .step-status {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        /* State: Completed */
+        .step-card.completed {
+            opacity: 1;
+            border-color: var(--success);
+        }
+        .step-card.completed .step-status {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-title { font-size: 1.1rem; font-weight: 600; }
+        .step-role { 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .step-content {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            display: none; /* Hidden until content arrives */
+            border-left: 3px solid var(--accent);
+        }
+
+        .data-viewer {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-muted);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Workflow Engine</h1>
+        <p>Visualize how AI agents pass data from one step to the next.</p>
+    </header>
+
+    <div class="config-box">
+        <div class="input-group">
+            <label>API Key</label>
+            <input type="password" id="apiKey" placeholder="sk-...">
+        </div>
+        <div class="input-group" style="flex: 2;">
+            <label>Topic to Write About</label>
+            <input type="text" id="userTopic" placeholder="e.g. The Future of Space Travel">
+        </div>
+        <button id="startBtn">Start Workflow</button>
+    </div>
+
+    <div class="workflow-container">
+        <div class="workflow-line"></div>
+
+        <!-- Step 1 -->
+        <div class="step-card" id="step1">
+            <div class="step-status">1</div>
+            <div class="step-header">
+                <div>
+                    <div class="step-title">Research Phase</div>
+                    <div class="step-role">Agent: The Researcher</div>
+                </div>
+                <div class="loading-spinner"></div>
+            </div>
+            <div class="step-content" id="output1"></div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card" id="step2">
+            <div class="step-status">2</div>
+            <div class="step-header">
+                <div>
+                    <div class="step-title">Structure Phase</div>
+                    <div class="step-role">Agent: The Architect</div>
+                </div>
+                <div class="loading-spinner"></div>
+            </div>
+            <div class="step-content" id="output2"></div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card" id="step3">
+            <div class="step-status">3</div>
+            <div class="step-header">
+                <div>
+                    <div class="step-title">Drafting Phase</div>
+                    <div class="step-role">Agent: The Writer</div>
+                </div>
+                <div class="loading-spinner"></div>
+            </div>
+            <div class="step-content" id="output3"></div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card" id="step4">
+            <div class="step-status">4</div>
+            <div class="step-header">
+                <div>
+                    <div class="step-title">Review Phase</div>
+                    <div class="step-role">Agent: The Critic</div>
+                </div>
+                <div class="loading-spinner"></div>
+            </div>
+            <div class="step-content" id="output4"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- Configuration ---
+    const steps = [
+        { id: 'step1', role: 'Researcher', prompt: (topic) => `Identify 3 key, surprising facts about: "${topic}". Be concise.` },
+        { id: 'step2', role: 'Architect', prompt: (prevOutput) => `Create a simple 3-section blog outline based ONLY on these facts:\n\n${prevOutput}` },
+        { id: 'step3', role: 'Writer', prompt: (prevOutput) => `Write a very short introduction paragraph based on this outline:\n\n${prevOutput}` },
+        { id: 'step4', role: 'Critic', prompt: (prevOutput) => `Rate this writing from 1-10 on excitement and give 1 sentence of feedback:\n\n${prevOutput}` }
+    ];
+
+    let currentStepIndex = 0;
+    // This variable "workflowData" represents the state being passed along
+    let workflowData = []; 
+
+    const startBtn = document.getElementById('startBtn');
+    
+    startBtn.addEventListener('click', runWorkflow);
+
+    async function runWorkflow() {
+        const apiKey = document.getElementById('apiKey').value;
+        const topic = document.getElementById('userTopic').value;
+
+        if(!apiKey || !topic) { alert("Please enter API Key and Topic"); return; }
+
+        // Reset UI
+        currentStepIndex = 0;
+        workflowData = [];
+        document.querySelectorAll('.step-card').forEach(el => {
+            el.className = 'step-card'; // remove active/completed
+            el.querySelector('.step-content').style.display = 'none';
+            el.querySelector('.step-content').textContent = '';
+        });
+        startBtn.disabled = true;
+
+        // Execute Step 1
+        await executeStep(0, topic, apiKey);
+    }
+
+    async function executeStep(index, inputData, apiKey) {
+        if (index >= steps.length) {
+            startBtn.disabled = false;
+            startBtn.textContent = "Workflow Complete";
+            setTimeout(() => startBtn.textContent = "Start Workflow", 2000);
+            return;
+        }
+
+        const stepConfig = steps[index];
+        const stepEl = document.getElementById(stepConfig.id);
+        
+        // UI: Set to Active
+        stepEl.classList.add('active');
+        stepEl.querySelector('.loading-spinner').style.display = 'block';
+
+        // Construct Prompt
+        // Notice: We pass 'inputData' which is the Output of the previous step!
+        const prompt = stepConfig.prompt(inputData);
+
+        try {
+            const response = await callOpenAI(prompt, apiKey);
+            
+            // UI: Update Content
+            const contentBox = stepEl.querySelector('.step-content');
+            contentBox.style.display = 'block';
+            contentBox.textContent = response;
+            
+            // UI: Set to Completed
+            stepEl.querySelector('.loading-spinner').style.display = 'none';
+            stepEl.classList.remove('active');
+            stepEl.classList.add('completed');
+
+            // Store data
+            workflowData.push({ step: stepConfig.id, input: inputData, output: response });
+
+            // TRIGGER NEXT STEP
+            // We pass the 'response' we just got as the input for the next function
+            await executeStep(index + 1, response, apiKey);
+
+        } catch (error) {
+            console.error(error);
+            stepEl.querySelector('.step-content').textContent = "Error: " + error.message;
+            stepEl.querySelector('.step-content').style.display = 'block';
+            startBtn.disabled = false;
+        }
+    }
+
+    async function callOpenAI(prompt, apiKey) {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini", // Using mini for speed/cost
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        if(data.error) throw new Error(data.error.message);
+        return data.choices[0].message.content;
+    }
+
+</script>
+
+</body>
+</html>

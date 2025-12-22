@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP (Model Context Protocol) Learning Lab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0c0c1e 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        /* Tabs */
+        .main-tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .main-tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-tab:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .main-tab.active {
+            background: linear-gradient(135deg, rgba(249,115,22,0.2), rgba(139,92,246,0.2));
+            border-color: #f97316;
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Panels */
+        .panel {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .panel h2 {
+            font-size: 1.3rem;
+            color: #f1f5f9;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel h3 {
+            font-size: 1.1rem;
+            color: #e2e8f0;
+            margin: 20px 0 15px;
+        }
+
+        .panel p {
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px 20px;
+            flex-wrap: wrap;
+        }
+
+        .arch-component {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            min-width: 180px;
+            transition: all 0.3s;
+        }
+
+        .arch-component:hover {
+            transform: translateY(-5px);
+        }
+
+        .arch-component.client {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.05));
+        }
+
+        .arch-component.protocol {
+            border-color: #f97316;
+            background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(249,115,22,0.05));
+        }
+
+        .arch-component.server {
+            border-color: #10b981;
+            background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05));
+        }
+
+        .arch-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .arch-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 5px;
+        }
+
+        .arch-subtitle {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .arch-arrow {
+            font-size: 2rem;
+            color: #64748b;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(249,115,22,0.5);
+            transform: translateY(-3px);
+        }
+
+        .feature-card h4 {
+            font-size: 1rem;
+            color: #f97316;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #0d1117;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .code-header {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .code-filename {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-family: monospace;
+        }
+
+        .code-lang {
+            font-size: 0.75rem;
+            background: rgba(249,115,22,0.2);
+            color: #f97316;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .code-content {
+            padding: 15px;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #e6edf3;
+        }
+
+        .code-content .comment { color: #8b949e; }
+        .code-content .keyword { color: #ff7b72; }
+        .code-content .string { color: #a5d6ff; }
+        .code-content .function { color: #d2a8ff; }
+        .code-content .number { color: #79c0ff; }
+        .code-content .property { color: #7ee787; }
+
+        .copy-btn {
+            padding: 5px 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 5px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        /* Simulator */
+        .simulator-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .simulator-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sim-panel {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .sim-header {
+            background: rgba(255,255,255,0.05);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sim-header h4 {
+            font-size: 0.9rem;
+            color: #f1f5f9;
+        }
+
+        .sim-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .sim-dot.client { background: #3b82f6; }
+        .sim-dot.server { background: #10b981; }
+
+        .sim-content {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .message-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mcp-message {
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .mcp-message.request {
+            background: rgba(59,130,246,0.1);
+            border-left: 3px solid #3b82f6;
+        }
+
+        .mcp-message.response {
+            background: rgba(16,185,129,0.1);
+            border-left: 3px solid #10b981;
+        }
+
+        .mcp-message.notification {
+            background: rgba(251,191,36,0.1);
+            border-left: 3px solid #fbbf24;
+        }
+
+        .msg-type {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .msg-content {
+            color: #e2e8f0;
+            white-space: pre-wrap;
+        }
+
+        /* Server List */
+        .server-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .server-item {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 15px;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .server-item:hover {
+            border-color: #f97316;
+            transform: translateX(5px);
+        }
+
+        .server-icon {
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        .server-info h4 {
+            font-size: 1rem;
+            color: #f1f5f9;
+            margin-bottom: 5px;
+        }
+
+        .server-info p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .server-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-official {
+            background: rgba(16,185,129,0.2);
+            color: #10b981;
+        }
+
+        .badge-community {
+            background: rgba(139,92,246,0.2);
+            color: #a78bfa;
+        }
+
+        /* Steps */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 15px;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #f97316, #ec4899);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 1rem;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .step-content p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f97316, #ec4899);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(249,115,22,0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* Interactive Demo */
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .demo-select {
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .demo-select:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        /* Callout */
+        .callout {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+
+        .callout.warning {
+            background: rgba(251,191,36,0.1);
+            border-color: rgba(251,191,36,0.3);
+        }
+
+        .callout.success {
+            background: rgba(16,185,129,0.1);
+            border-color: rgba(16,185,129,0.3);
+        }
+
+        .callout h4 {
+            font-size: 0.9rem;
+            color: #3b82f6;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .callout.warning h4 { color: #fbbf24; }
+        .callout.success h4 { color: #10b981; }
+
+        .callout p {
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔌 MCP Learning Lab</h1>
+            <p>Master the Model Context Protocol - Connect AI to the real world</p>
+        </header>
+
+        <div class="main-tabs">
+            <button class="main-tab active" onclick="switchMainTab('overview')">
+                <span>📖</span> Overview
+            </button>
+            <button class="main-tab" onclick="switchMainTab('simulator')">
+                <span>🎮</span> Live Simulator
+            </button>
+            <button class="main-tab" onclick="switchMainTab('servers')">
+                <span>🖥️</span> MCP Servers
+            </button>
+            <button class="main-tab" onclick="switchMainTab('build')">
+                <span>🛠️</span> Build Your Own
+            </button>
+            <button class="main-tab" onclick="switchMainTab('integrate')">
+                <span>🔗</span> Integration Guide
+            </button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div class="tab-content active" id="tab-overview">
+            <div class="panel">
+                <h2>🤔 What is MCP?</h2>
+                <p>
+                    <strong>Model Context Protocol (MCP)</strong> is an open standard that enables AI assistants to securely connect with external data sources and tools. Think of it as a "USB port" for AI — a universal way to plug in new capabilities.
+                </p>
+
+                <div class="architecture-diagram">
+                    <div class="arch-component client">
+                        <div class="arch-icon">🤖</div>
+                        <div class="arch-title">MCP Client</div>
+                        <div class="arch-subtitle">Claude, AI Apps</div>
+                    </div>
+                    <div class="arch-arrow">⟷</div>
+                    <div class="arch-component protocol">
+                        <div class="arch-icon">🔌</div>
+                        <div class="arch-title">MCP Protocol</div>
+                        <div class="arch-subtitle">JSON-RPC 2.0</div>
+                    </div>
+                    <div class="arch-arrow">⟷</div>
+                    <div class="arch-component server">
+                        <div class="arch-icon">🖥️</div>
+                        <div class="arch-title">MCP Servers</div>
+                        <div class="arch-subtitle">Tools & Data</div>
+                    </div>
+                </div>
+
+                <h3>🎯 Three Core Primitives</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🔧 Tools</h4>
+                        <p>Functions that the AI can execute. Examples: search the web, query a database, send an email, create a file.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>📄 Resources</h4>
+                        <p>Data that the AI can read. Examples: files, database records, API responses, live data feeds.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>💬 Prompts</h4>
+                        <p>Pre-defined prompt templates that servers can offer. Examples: "Summarize this repo", "Analyze this data".</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🌟 Why MCP Matters</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🔐 Secure by Design</h4>
+                        <p>User controls what data AI can access. Servers run locally or in trusted environments.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🔄 Standardized</h4>
+                        <p>One protocol works across all AI applications. Build once, use everywhere.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🧩 Modular</h4>
+                        <p>Add/remove capabilities without changing the AI. Plug and play architecture.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🌍 Open Source</h4>
+                        <p>Community-driven ecosystem. Anyone can build and share MCP servers.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>📊 MCP Message Flow</h2>
+                <p>MCP uses JSON-RPC 2.0 for communication. Here's how a typical interaction works:</p>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-filename">message-flow.json</span>
+                        <span class="code-lang">JSON-RPC</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// 1. Client discovers available tools</span>
+<span class="property">"method"</span>: <span class="string">"tools/list"</span>
+
+<span class="comment">// 2. Server responds with tool definitions</span>
+{
+  <span class="property">"tools"</span>: [{
+    <span class="property">"name"</span>: <span class="string">"read_file"</span>,
+    <span class="property">"description"</span>: <span class="string">"Read contents of a file"</span>,
+    <span class="property">"inputSchema"</span>: { <span class="property">"type"</span>: <span class="string">"object"</span>, ... }
+  }]
+}
+
+<span class="comment">// 3. Client calls a tool</span>
+{
+  <span class="property">"method"</span>: <span class="string">"tools/call"</span>,
+  <span class="property">"params"</span>: {
+    <span class="property">"name"</span>: <span class="string">"read_file"</span>,
+    <span class="property">"arguments"</span>: { <span class="property">"path"</span>: <span class="string">"/docs/readme.md"</span> }
+  }
+}
+
+<span class="comment">// 4. Server returns the result</span>
+{
+  <span class="property">"content"</span>: [{ <span class="property">"type"</span>: <span class="string">"text"</span>, <span class="property">"text"</span>: <span class="string">"# Welcome..."</span> }]
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulator Tab -->
+        <div class="tab-content" id="tab-simulator">
+            <div class="panel">
+                <h2>🎮 Interactive MCP Simulator</h2>
+                <p>See how MCP clients and servers communicate in real-time. Select a scenario to simulate the message flow.</p>
+
+                <div class="demo-controls">
+                    <select class="demo-select" id="scenario-select" onchange="runScenario()">
+                        <option value="init">🔌 Initialize Connection</option>
+                        <option value="list_tools">🔧 List Available Tools</option>
+                        <option value="call_tool">⚡ Call a Tool</option>
+                        <option value="read_resource">📄 Read a Resource</option>
+                        <option value="full_flow">🔄 Full Interaction Flow</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="runScenario()">
+                        <span>▶️</span> Run Scenario
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearSimulator()">
+                        <span>🗑️</span> Clear
+                    </button>
+                </div>
+
+                <div class="simulator-layout">
+                    <div class="sim-panel">
+                        <div class="sim-header">
+                            <div class="sim-dot client"></div>
+                            <h4>MCP Client (AI Application)</h4>
+                        </div>
+                        <div class="sim-content">
+                            <div class="message-flow" id="client-messages">
+                                <div class="mcp-message notification">
+                                    <div class="msg-type">STATUS</div>
+                                    <div class="msg-content">Ready to connect...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sim-panel">
+                        <div class="sim-header">
+                            <div class="sim-dot server"></div>
+                            <h4>MCP Server (Filesystem)</h4>
+                        </div>
+                        <div class="sim-content">
+                            <div class="message-flow" id="server-messages">
+                                <div class="mcp-message notification">
+                                    <div class="msg-type">STATUS</div>
+                                    <div class="msg-content">Server listening...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout" style="margin-top: 20px;">
+                    <h4>💡 What's Happening?</h4>
+                    <p id="scenario-explanation">Select a scenario above to see how MCP messages flow between client and server.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Servers Tab -->
+        <div class="tab-content" id="tab-servers">
+            <div class="panel">
+                <h2>🖥️ Popular MCP Servers</h2>
+                <p>These ready-to-use MCP servers can be connected to Claude Desktop or your own applications.</p>
+
+                <div class="server-list">
+                    <div class="server-item" onclick="showServerDetails('filesystem')">
+                        <div class="server-icon">📁</div>
+                        <div class="server-info">
+                            <h4>Filesystem</h4>
+                            <p>Read, write, and manage local files and directories</p>
+                        </div>
+                        <span class="server-badge badge-official">Official</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('github')">
+                        <div class="server-icon">🐙</div>
+                        <div class="server-info">
+                            <h4>GitHub</h4>
+                            <p>Manage repositories, issues, pull requests, and more</p>
+                        </div>
+                        <span class="server-badge badge-official">Official</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('postgres')">
+                        <div class="server-icon">🐘</div>
+                        <div class="server-info">
+                            <h4>PostgreSQL</h4>
+                            <p>Query and analyze PostgreSQL databases</p>
+                        </div>
+                        <span class="server-badge badge-official">Official</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('slack')">
+                        <div class="server-icon">💬</div>
+                        <div class="server-info">
+                            <h4>Slack</h4>
+                            <p>Read messages, post updates, manage channels</p>
+                        </div>
+                        <span class="server-badge badge-official">Official</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('puppeteer')">
+                        <div class="server-icon">🌐</div>
+                        <div class="server-info">
+                            <h4>Puppeteer</h4>
+                            <p>Browser automation, screenshots, web scraping</p>
+                        </div>
+                        <span class="server-badge badge-official">Official</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('memory')">
+                        <div class="server-icon">🧠</div>
+                        <div class="server-info">
+                            <h4>Memory</h4>
+                            <p>Persistent memory and knowledge graph for AI</p>
+                        </div>
+                        <span class="server-badge badge-official">Official</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('brave')">
+                        <div class="server-icon">🔍</div>
+                        <div class="server-info">
+                            <h4>Brave Search</h4>
+                            <p>Web and local search using Brave Search API</p>
+                        </div>
+                        <span class="server-badge badge-community">Community</span>
+                    </div>
+
+                    <div class="server-item" onclick="showServerDetails('notion')">
+                        <div class="server-icon">📝</div>
+                        <div class="server-info">
+                            <h4>Notion</h4>
+                            <p>Read and update Notion pages and databases</p>
+                        </div>
+                        <span class="server-badge badge-community">Community</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Details Modal -->
+            <div class="panel" id="server-details" style="display: none;">
+                <h2 id="server-detail-title">📁 Filesystem Server</h2>
+                <div id="server-detail-content"></div>
+            </div>
+        </div>
+
+        <!-- Build Tab -->
+        <div class="tab-content" id="tab-build">
+            <div class="panel">
+                <h2>🛠️ Build Your Own MCP Server</h2>
+                <p>Create a custom MCP server in Python or TypeScript. Here's a complete example:</p>
+
+                <h3>Python MCP Server</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-filename">weather_server.py</span>
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="keyword">from</span> mcp.server <span class="keyword">import</span> Server
+<span class="keyword">from</span> mcp.types <span class="keyword">import</span> Tool, TextContent
+<span class="keyword">import</span> httpx
+
+<span class="comment"># Create server instance</span>
+server = Server(<span class="string">"weather-server"</span>)
+
+<span class="comment"># Define a tool</span>
+<span class="keyword">@server.tool</span>()
+<span class="keyword">async def</span> <span class="function">get_weather</span>(city: <span class="property">str</span>) -> <span class="property">str</span>:
+    <span class="string">"""Get current weather for a city."""</span>
+    <span class="comment"># Call weather API</span>
+    <span class="keyword">async with</span> httpx.AsyncClient() <span class="keyword">as</span> client:
+        response = <span class="keyword">await</span> client.get(
+            <span class="string">f"https://wttr.in/{city}?format=j1"</span>
+        )
+        data = response.json()
+    
+    current = data[<span class="string">"current_condition"</span>][<span class="number">0</span>]
+    <span class="keyword">return</span> <span class="string">f"""
+Weather in {city}:
+🌡️ Temperature: {current['temp_C']}°C
+💧 Humidity: {current['humidity']}%
+🌤️ Condition: {current['weatherDesc'][0]['value']}
+"""</span>
+
+<span class="comment"># Define a resource</span>
+<span class="keyword">@server.resource</span>(<span class="string">"weather://forecast/{city}"</span>)
+<span class="keyword">async def</span> <span class="function">get_forecast</span>(city: <span class="property">str</span>):
+    <span class="string">"""Get 3-day forecast for a city."""</span>
+    <span class="comment"># Return forecast data...</span>
+    <span class="keyword">return</span> TextContent(text=<span class="string">f"Forecast for {city}..."</span>)
+
+<span class="comment"># Run the server</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    <span class="keyword">import</span> asyncio
+    asyncio.run(server.run())</pre>
+                    </div>
+                </div>
+
+                <h3>TypeScript MCP Server</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-filename">calculator-server.ts</span>
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="keyword">import</span> { Server } <span class="keyword">from</span> <span class="string">"@modelcontextprotocol/sdk/server"</span>;
+<span class="keyword">import</span> { StdioServerTransport } <span class="keyword">from</span> <span class="string">"@modelcontextprotocol/sdk/server/stdio"</span>;
+
+<span class="comment">// Create server</span>
+<span class="keyword">const</span> server = <span class="keyword">new</span> <span class="function">Server</span>({
+  name: <span class="string">"calculator-server"</span>,
+  version: <span class="string">"1.0.0"</span>
+});
+
+<span class="comment">// Register tools</span>
+server.<span class="function">setRequestHandler</span>(<span class="string">"tools/list"</span>, <span class="keyword">async</span> () => ({
+  tools: [
+    {
+      name: <span class="string">"calculate"</span>,
+      description: <span class="string">"Evaluate a math expression"</span>,
+      inputSchema: {
+        type: <span class="string">"object"</span>,
+        properties: {
+          expression: { type: <span class="string">"string"</span> }
+        },
+        required: [<span class="string">"expression"</span>]
+      }
+    }
+  ]
+}));
+
+<span class="comment">// Handle tool calls</span>
+server.<span class="function">setRequestHandler</span>(<span class="string">"tools/call"</span>, <span class="keyword">async</span> (request) => {
+  <span class="keyword">if</span> (request.params.name === <span class="string">"calculate"</span>) {
+    <span class="keyword">const</span> result = <span class="function">eval</span>(request.params.arguments.expression);
+    <span class="keyword">return</span> {
+      content: [{ type: <span class="string">"text"</span>, text: <span class="function">String</span>(result) }]
+    };
+  }
+});
+
+<span class="comment">// Start server</span>
+<span class="keyword">const</span> transport = <span class="keyword">new</span> <span class="function">StdioServerTransport</span>();
+server.<span class="function">connect</span>(transport);</pre>
+                    </div>
+                </div>
+
+                <div class="callout success">
+                    <h4>✅ Quick Setup Commands</h4>
+                    <p>
+                        <strong>Python:</strong> <code>pip install mcp</code><br>
+                        <strong>TypeScript:</strong> <code>npm install @modelcontextprotocol/sdk</code>
+                    </p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>📋 MCP Server Template</h2>
+                <p>Here's a complete template with all three primitives:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-filename">complete_server.py</span>
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="keyword">from</span> mcp.server <span class="keyword">import</span> Server
+<span class="keyword">from</span> mcp.types <span class="keyword">import</span> (
+    Tool, Resource, Prompt,
+    TextContent, PromptMessage
+)
+
+server = Server(<span class="string">"my-mcp-server"</span>)
+
+<span class="comment"># ============ TOOLS ============</span>
+<span class="keyword">@server.tool</span>()
+<span class="keyword">async def</span> <span class="function">search_notes</span>(query: <span class="property">str</span>) -> <span class="property">str</span>:
+    <span class="string">"""Search through saved notes."""</span>
+    <span class="comment"># Your search logic here</span>
+    <span class="keyword">return</span> <span class="string">f"Found notes matching: {query}"</span>
+
+<span class="keyword">@server.tool</span>()
+<span class="keyword">async def</span> <span class="function">create_note</span>(title: <span class="property">str</span>, content: <span class="property">str</span>) -> <span class="property">str</span>:
+    <span class="string">"""Create a new note."""</span>
+    <span class="comment"># Your create logic here</span>
+    <span class="keyword">return</span> <span class="string">f"Created note: {title}"</span>
+
+<span class="comment"># ============ RESOURCES ============</span>
+<span class="keyword">@server.resource</span>(<span class="string">"notes://list"</span>)
+<span class="keyword">async def</span> <span class="function">list_notes</span>():
+    <span class="string">"""List all available notes."""</span>
+    notes = [<span class="string">"note1.md"</span>, <span class="string">"note2.md"</span>]
+    <span class="keyword">return</span> TextContent(text=<span class="string">"\n"</span>.join(notes))
+
+<span class="keyword">@server.resource</span>(<span class="string">"notes://{note_id}"</span>)
+<span class="keyword">async def</span> <span class="function">get_note</span>(note_id: <span class="property">str</span>):
+    <span class="string">"""Get a specific note by ID."""</span>
+    <span class="keyword">return</span> TextContent(text=<span class="string">f"Content of {note_id}..."</span>)
+
+<span class="comment"># ============ PROMPTS ============</span>
+<span class="keyword">@server.prompt</span>()
+<span class="keyword">async def</span> <span class="function">summarize_notes</span>():
+    <span class="string">"""Prompt to summarize all notes."""</span>
+    <span class="keyword">return</span> [
+        PromptMessage(
+            role=<span class="string">"user"</span>,
+            content=<span class="string">"Please summarize all my notes..."</span>
+        )
+    ]
+
+<span class="comment"># ============ RUN ============</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    <span class="keyword">import</span> asyncio
+    asyncio.run(server.run())</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrate Tab -->
+        <div class="tab-content" id="tab-integrate">
+            <div class="panel">
+                <h2>🔗 Integrate MCP with Claude Desktop</h2>
+                <p>Connect MCP servers to Claude Desktop for a supercharged AI assistant.</p>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Locate the Config File</h4>
+                            <p>
+                                <strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code><br>
+                                <strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Add MCP Server Configuration</h4>
+                            <p>Edit the config file to include your MCP servers:</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-filename">claude_desktop_config.json</span>
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  <span class="property">"mcpServers"</span>: {
+    <span class="property">"filesystem"</span>: {
+      <span class="property">"command"</span>: <span class="string">"npx"</span>,
+      <span class="property">"args"</span>: [
+        <span class="string">"-y"</span>,
+        <span class="string">"@modelcontextprotocol/server-filesystem"</span>,
+        <span class="string">"/Users/you/Documents"</span>
+      ]
+    },
+    <span class="property">"github"</span>: {
+      <span class="property">"command"</span>: <span class="string">"npx"</span>,
+      <span class="property">"args"</span>: [
+        <span class="string">"-y"</span>,
+        <span class="string">"@modelcontextprotocol/server-github"</span>
+      ],
+      <span class="property">"env"</span>: {
+        <span class="property">"GITHUB_TOKEN"</span>: <span class="string">"your-github-token"</span>
+      }
+    },
+    <span class="property">"postgres"</span>: {
+      <span class="property">"command"</span>: <span class="string">"npx"</span>,
+      <span class="property">"args"</span>: [
+        <span class="string">"-y"</span>,
+        <span class="string">"@modelcontextprotocol/server-postgres"</span>,
+        <span class="string">"postgresql://localhost/mydb"</span>
+      ]
+    },
+    <span class="property">"custom-python"</span>: {
+      <span class="property">"command"</span>: <span class="string">"python"</span>,
+      <span class="property">"args"</span>: [<span class="string">"/path/to/your/server.py"</span>]
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Restart Claude Desktop</h4>
+                            <p>Quit and reopen Claude Desktop. Your MCP servers will now be available!</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Verify Connection</h4>
+                            <p>Look for the 🔌 icon in Claude Desktop. Click it to see connected MCP servers and available tools.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout warning">
+                    <h4>⚠️ Important Notes</h4>
+                    <p>
+                        • MCP servers have access to your local system — only use trusted servers<br>
+                        • API keys in config files should be kept secure<br>
+                        • Check server logs if connection fails: <code>~/Library/Logs/Claude/</code>
+                    </p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🔧 Integrate MCP in Your Own App</h2>
+                <p>Use the MCP SDK to connect to servers from your own applications:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-filename">mcp_client.py</span>
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="keyword">from</span> mcp <span class="keyword">import</span> ClientSession, StdioServerParameters
+<span class="keyword">from</span> mcp.client.stdio <span class="keyword">import</span> stdio_client
+
+<span class="keyword">async def</span> <span class="function">main</span>():
+    <span class="comment"># Connect to an MCP server</span>
+    server_params = StdioServerParameters(
+        command=<span class="string">"npx"</span>,
+        args=[<span class="string">"-y"</span>, <span class="string">"@modelcontextprotocol/server-filesystem"</span>, <span class="string">"/tmp"</span>]
+    )
+    
+    <span class="keyword">async with</span> stdio_client(server_params) <span class="keyword">as</span> (read, write):
+        <span class="keyword">async with</span> ClientSession(read, write) <span class="keyword">as</span> session:
+            <span class="comment"># Initialize the connection</span>
+            <span class="keyword">await</span> session.initialize()
+            
+            <span class="comment"># List available tools</span>
+            tools = <span class="keyword">await</span> session.list_tools()
+            <span class="keyword">print</span>(<span class="string">"Available tools:"</span>, [t.name <span class="keyword">for</span> t <span class="keyword">in</span> tools.tools])
+            
+            <span class="comment"># Call a tool</span>
+            result = <span class="keyword">await</span> session.call_tool(
+                <span class="string">"read_file"</span>,
+                arguments={<span class="string">"path"</span>: <span class="string">"/tmp/test.txt"</span>}
+            )
+            <span class="keyword">print</span>(<span class="string">"File contents:"</span>, result.content)
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    <span class="keyword">import</span> asyncio
+    asyncio.run(main())</pre>
+                    </div>
+                </div>
+
+                <div class="callout success">
+                    <h4>🚀 Resources</h4>
+                    <p>
+                        <strong>Documentation:</strong> <a href="https://modelcontextprotocol.io" style="color: #3b82f6;">modelcontextprotocol.io</a><br>
+                        <strong>GitHub:</strong> <a href="https://github.com/modelcontextprotocol" style="color: #3b82f6;">github.com/modelcontextprotocol</a><br>
+                        <strong>Server Directory:</strong> <a href="https://github.com/modelcontextprotocol/servers" style="color: #3b82f6;">MCP Servers Repository</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchMainTab(tabId) {
+            document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // Simulator scenarios
+        const scenarios = {
+            init: {
+                explanation: "The client and server exchange initialization messages to establish capabilities and protocol version.",
+                messages: [
+                    { side: 'client', type: 'request', content: '→ initialize\n{\n  "protocolVersion": "2024-11-05",\n  "clientInfo": {\n    "name": "my-ai-app",\n    "version": "1.0.0"\n  }\n}' },
+                    { side: 'server', type: 'response', content: '← initialize result\n{\n  "protocolVersion": "2024-11-05",\n  "serverInfo": {\n    "name": "filesystem-server",\n    "version": "1.0.0"\n  },\n  "capabilities": {\n    "tools": {},\n    "resources": {}\n  }\n}' },
+                    { side: 'client', type: 'notification', content: '→ initialized\n(Connection established!)' }
+                ]
+            },
+            list_tools: {
+                explanation: "The client requests a list of all available tools from the server. Each tool includes its name, description, and input schema.",
+                messages: [
+                    { side: 'client', type: 'request', content: '→ tools/list\n{}' },
+                    { side: 'server', type: 'response', content: '← tools/list result\n{\n  "tools": [\n    {\n      "name": "read_file",\n      "description": "Read file contents",\n      "inputSchema": {\n        "type": "object",\n        "properties": {\n          "path": { "type": "string" }\n        }\n      }\n    },\n    {\n      "name": "write_file",\n      "description": "Write to a file",\n      "inputSchema": {...}\n    }\n  ]\n}' }
+                ]
+            },
+            call_tool: {
+                explanation: "The client invokes a tool with specific arguments. The server executes the tool and returns the result.",
+                messages: [
+                    { side: 'client', type: 'request', content: '→ tools/call\n{\n  "name": "read_file",\n  "arguments": {\n    "path": "/docs/readme.md"\n  }\n}' },
+                    { side: 'server', type: 'notification', content: '⚡ Executing read_file...' },
+                    { side: 'server', type: 'response', content: '← tools/call result\n{\n  "content": [\n    {\n      "type": "text",\n      "text": "# Welcome to My Project\\n\\nThis is the readme file..."\n    }\n  ]\n}' }
+                ]
+            },
+            read_resource: {
+                explanation: "Resources are data that the AI can read. Unlike tools, resources are passive data sources identified by URIs.",
+                messages: [
+                    { side: 'client', type: 'request', content: '→ resources/list\n{}' },
+                    { side: 'server', type: 'response', content: '← resources/list result\n{\n  "resources": [\n    {\n      "uri": "file:///docs/readme.md",\n      "name": "README",\n      "mimeType": "text/markdown"\n    }\n  ]\n}' },
+                    { side: 'client', type: 'request', content: '→ resources/read\n{\n  "uri": "file:///docs/readme.md"\n}' },
+                    { side: 'server', type: 'response', content: '← resources/read result\n{\n  "contents": [\n    {\n      "uri": "file:///docs/readme.md",\n      "text": "# Project README..."\n    }\n  ]\n}' }
+                ]
+            },
+            full_flow: {
+                explanation: "A complete interaction: initialize connection, discover tools, call a tool, and handle the result.",
+                messages: [
+                    { side: 'client', type: 'request', content: '→ initialize\n{ "protocolVersion": "2024-11-05" }' },
+                    { side: 'server', type: 'response', content: '← initialize result\n{ "capabilities": { "tools": {} } }' },
+                    { side: 'client', type: 'notification', content: '→ initialized ✓' },
+                    { side: 'client', type: 'request', content: '→ tools/list' },
+                    { side: 'server', type: 'response', content: '← Found 3 tools: read_file, write_file, list_directory' },
+                    { side: 'client', type: 'request', content: '→ tools/call "list_directory"\n{ "path": "/projects" }' },
+                    { side: 'server', type: 'response', content: '← Result:\n📁 project-a/\n📁 project-b/\n📄 notes.md' },
+                    { side: 'client', type: 'notification', content: '✅ Workflow complete!' }
+                ]
+            }
+        };
+
+        async function runScenario() {
+            const scenario = document.getElementById('scenario-select').value;
+            const data = scenarios[scenario];
+            
+            clearSimulator();
+            document.getElementById('scenario-explanation').textContent = data.explanation;
+
+            for (const msg of data.messages) {
+                await addSimMessage(msg.side, msg.type, msg.content);
+                await sleep(800);
+            }
+        }
+
+        async function addSimMessage(side, type, content) {
+            const container = document.getElementById(`${side}-messages`);
+            const div = document.createElement('div');
+            div.className = `mcp-message ${type}`;
+            div.innerHTML = `
+                <div class="msg-type">${type.toUpperCase()}</div>
+                <div class="msg-content">${escapeHtml(content)}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearSimulator() {
+            document.getElementById('client-messages').innerHTML = `
+                <div class="mcp-message notification">
+                    <div class="msg-type">STATUS</div>
+                    <div class="msg-content">Ready to connect...</div>
+                </div>
+            `;
+            document.getElementById('server-messages').innerHTML = `
+                <div class="mcp-message notification">
+                    <div class="msg-type">STATUS</div>
+                    <div class="msg-content">Server listening...</div>
+                </div>
+            `;
+        }
+
+        // Server details
+        const serverDetails = {
+            filesystem: {
+                title: '📁 Filesystem Server',
+                content: `
+                    <p>Provides secure access to your local filesystem.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>read_file</strong> - Read contents of a file</li>
+                        <li><strong>write_file</strong> - Write content to a file</li>
+                        <li><strong>list_directory</strong> - List files in a directory</li>
+                        <li><strong>create_directory</strong> - Create a new directory</li>
+                        <li><strong>move_file</strong> - Move or rename files</li>
+                    </ul>
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-content">
+                            <pre>npx -y @modelcontextprotocol/server-filesystem /path/to/allow</pre>
+                        </div>
+                    </div>
+                `
+            },
+            github: {
+                title: '🐙 GitHub Server',
+                content: `
+                    <p>Interact with GitHub repositories, issues, and pull requests.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>search_repositories</strong> - Search for repos</li>
+                        <li><strong>get_file_contents</strong> - Read files from repos</li>
+                        <li><strong>create_issue</strong> - Create new issues</li>
+                        <li><strong>create_pull_request</strong> - Open PRs</li>
+                        <li><strong>list_commits</strong> - View commit history</li>
+                    </ul>
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-content">
+                            <pre>GITHUB_TOKEN=xxx npx -y @modelcontextprotocol/server-github</pre>
+                        </div>
+                    </div>
+                `
+            },
+            postgres: {
+                title: '🐘 PostgreSQL Server',
+                content: `
+                    <p>Query and analyze PostgreSQL databases safely.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>query</strong> - Execute read-only SQL queries</li>
+                        <li><strong>list_tables</strong> - Show database tables</li>
+                        <li><strong>describe_table</strong> - Get table schema</li>
+                    </ul>
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-content">
+                            <pre>npx -y @modelcontextprotocol/server-postgres postgresql://user:pass@localhost/db</pre>
+                        </div>
+                    </div>
+                `
+            },
+            slack: {
+                title: '💬 Slack Server',
+                content: `
+                    <p>Read and send messages in Slack workspaces.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>list_channels</strong> - Get available channels</li>
+                        <li><strong>read_messages</strong> - Read channel history</li>
+                        <li><strong>post_message</strong> - Send messages</li>
+                        <li><strong>search_messages</strong> - Search across channels</li>
+                    </ul>
+                    <h3>Setup</h3>
+                    <p>Requires a Slack Bot Token with appropriate scopes.</p>
+                `
+            },
+            puppeteer: {
+                title: '🌐 Puppeteer Server',
+                content: `
+                    <p>Browser automation and web scraping capabilities.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>navigate</strong> - Go to a URL</li>
+                        <li><strong>screenshot</strong> - Capture page screenshots</li>
+                        <li><strong>click</strong> - Click elements</li>
+                        <li><strong>fill</strong> - Fill form inputs</li>
+                        <li><strong>evaluate</strong> - Run JavaScript on page</li>
+                    </ul>
+                `
+            },
+            memory: {
+                title: '🧠 Memory Server',
+                content: `
+                    <p>Persistent memory using a knowledge graph structure.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>create_entities</strong> - Store new information</li>
+                        <li><strong>create_relations</strong> - Link entities together</li>
+                        <li><strong>search_nodes</strong> - Query the knowledge graph</li>
+                        <li><strong>open_nodes</strong> - Retrieve specific entities</li>
+                    </ul>
+                    <p>Great for giving AI persistent memory across conversations!</p>
+                `
+            },
+            brave: {
+                title: '🔍 Brave Search Server',
+                content: `
+                    <p>Web search using the Brave Search API.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>web_search</strong> - Search the web</li>
+                        <li><strong>local_search</strong> - Find local businesses</li>
+                    </ul>
+                    <h3>Setup</h3>
+                    <p>Requires a Brave Search API key from brave.com/search/api</p>
+                `
+            },
+            notion: {
+                title: '📝 Notion Server',
+                content: `
+                    <p>Read and update Notion workspaces.</p>
+                    <h3>Available Tools</h3>
+                    <ul>
+                        <li><strong>search</strong> - Search pages and databases</li>
+                        <li><strong>get_page</strong> - Read page content</li>
+                        <li><strong>create_page</strong> - Create new pages</li>
+                        <li><strong>update_page</strong> - Modify existing pages</li>
+                    </ul>
+                    <h3>Setup</h3>
+                    <p>Requires a Notion integration token.</p>
+                `
+            }
+        };
+
+        function showServerDetails(serverId) {
+            const details = serverDetails[serverId];
+            document.getElementById('server-detail-title').textContent = details.title;
+            document.getElementById('server-detail-content').innerHTML = details.content;
+            document.getElementById('server-details').style.display = 'block';
+            document.getElementById('server-details').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Copy code
+        function copyCode(btn) {
+            const codeBlock = btn.closest('.code-block');
+            const code = codeBlock.querySelector('pre').textContent;
+            navigator.clipboard.writeText(code);
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+        }
+
+        // Utilities
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+    </script>
+</body>
+</html>
